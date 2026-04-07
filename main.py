@@ -68,7 +68,7 @@ class RK4_Thread(QThread):
             time = np.array([])
             
             i = 0
-            for line in read_floats_numpy('values.bin'):
+            for line in list(read_floats_numpy('values.bin')):
                 i += 1
                 yi, y1i, t, m1, m2, m3, m4, k1, k2, k3, k4 = line
                 if t > END_TIME: break
