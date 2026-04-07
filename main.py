@@ -57,16 +57,19 @@ class MplCanvas(FigureCanvas):
 
 class RK4_Thread(QThread):
     error_ocurred = pyqtSignal(Exception)
+    status_update = pyqtSignal(str)
+    plot_update = pyqtSignal(np.ndarray, np.ndarray)
+
     def set_params(self, canvas: FigureCanvas, stB: QLabel):
         self.canvas1 = canvas
         self.stB = stB
 
     def run(self):
         try:
-            self.stB.setText('Поток вычислений запущен...')
+            self.status_update.emit('Поток вычислений запущен...')
             psi = np.array([])
             time = np.array([])
-            
+
             i = 0
             for line in list(read_floats_numpy('values.bin')):
                 i += 1
@@ -74,15 +77,11 @@ class RK4_Thread(QThread):
                 if t > END_TIME: break
                 time = np.append(time, t)
                 psi = np.append(psi, yi)
-                self.stB.setText(f'Текущее время: {t:.2f} cекунд')
                 if i % 2000 == 0:
-                    self.canvas1.axes.cla()
-                    self.canvas1.axes.plot(time, psi)
-                    self.canvas1.draw()
-            
-            self.canvas1.axes.cla()
-            self.canvas1.axes.plot(time, psi)
-            self.canvas1.draw()
+                    self.status_update.emit(f'Текущее время: {t:.2f} cекунд')
+                    self.plot_update.emit(time.copy(), psi.copy())
+
+            self.plot_update.emit(time.copy(), psi.copy())
             '''m1, m2, m3, m4, k1, k2, k3, k4 = 0, 0, 0, 0, 0, 0, 0, 0
             yi = PSI0
             y1i = PSI10
@@ -120,7 +119,7 @@ class RK4_Thread(QThread):
             self.canvas1.axes.cla()
             self.canvas1.axes.plot(time, psi)
             self.canvas1.draw()'''
-            self.stB.setText('Вычисления завершены')
+            self.status_update.emit('Вычисления завершены')
             return super().run()
         except Exception as e:
             self.error_ocurred.emit(e)
@@ -151,12 +150,19 @@ class Window(QWidget):
 
         self.calculate_but.clicked.connect(self.draw_plot)
 
+    def _update_plot(self, time, psi):
+        self.canvas.axes.cla()
+        self.canvas.axes.plot(time, psi)
+        self.canvas.draw()
+
     def draw_plot(self):
         self.calculate_but.setDisabled(True)
         self.calc_thread = RK4_Thread()
         self.calc_thread.finished.connect(lambda *x: self.calculate_but.setEnabled(True))
         self.calc_thread.finished.connect(self.calc_thread.deleteLater)
         self.calc_thread.error_ocurred.connect(lambda x: print(x))
+        self.calc_thread.status_update.connect(self.statusLab.setText)
+        self.calc_thread.plot_update.connect(self._update_plot)
         self.calc_thread.set_params(self.canvas, self.statusLab)
         self.calc_thread.start()
 
