@@ -2,6 +2,8 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.bin
+new.py
 
 # C extensions
 *.so
