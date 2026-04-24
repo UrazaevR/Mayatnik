@@ -2,6 +2,7 @@ from PyQt6.QtCore import pyqtSignal, QThread
 from PyQt6.QtWidgets import QLabel
 import numpy as np
 import math
+from time import time as current_time
 
 
 class RK4_Thread(QThread):
@@ -66,9 +67,16 @@ class RK4_Thread(QThread):
     def run(self):
         try:
             self.status_update.emit("Поток вычислений запущен...")
+            step_count = int(self.END_TIME * (1 / self.h))
+            # last_plot_update_time = 0
 
-            psi = np.array([self.PSI0])
-            time = np.array([0])
+            # psi = np.array([self.PSI0])
+            psi = np.zeros(step_count)
+            psi[0] = self.PSI0
+
+            # time = np.array([0])
+            time = np.zeros(step_count)
+            time[0] = 0
 
             time2 = np.array([])
             T = np.array([])
@@ -82,23 +90,29 @@ class RK4_Thread(QThread):
             t = 0
             self.status_update.emit("Данных нет, начинаю расчет")
 
-            while t < self.END_TIME and not self.stop_flag:
+            while i < (step_count - 1) and not self.stop_flag:
                 i += 1
                 y1i = y1i + (m1 + 2 * m2 + 2 * m3 + m4) / 6
                 yi = yi + (k1 + 2 * k2 + 2 * k3 + k4) / 6
-                psi = np.append(psi, yi)
-                time = np.append(time, t)
+                t = t + self.h
+
+                # psi = np.append(psi, yi)
+                psi[i] = yi
+
+                # time = np.append(time, t)
+                time[i] = t
                 self.status_update.emit(
                     f"Актуальное время: {t:.3f} с / {self.END_TIME} с"
                 )
-                if len(psi) > 2:
-                    if (psi[-3] <= psi[-2]) and (psi[-2] >= psi[-1]):
-                        amp = np.append(amp, math.degrees(psi[-2]))
-                        time2 = np.append(time2, time[-2])
+                if i > 2:
+                    if (psi[i-3] <= psi[i-2]) and (psi[i-2] >= psi[i-1]):
+                        amp = np.append(amp, math.degrees(psi[i-2]))
+                        time2 = np.append(time2, time[i-2])
                         if len(time2) > 1:
                             T = np.append(T, time2[-1] - time2[-2])
-                if i % 750 == 0:
+                if i % (step_count // 100) == 0:
                     self.plot_update.emit(time2, amp, amp[1:], T)
+                    # last_plot_update_time = current_time()
                     # self.plot_update.emit(time2, amp)
                 m1 = self.h * self.dfi1dt(y1i, yi, t)
                 k1 = self.h * self.dfidt(y1i, yi, t)
@@ -108,7 +122,7 @@ class RK4_Thread(QThread):
                 k3 = self.h * self.dfidt(y1i + m2 / 2, yi + k2 / 2, t + self.h / 2)
                 m4 = self.h * self.dfi1dt(y1i + m3, yi + k3, t + self.h)
                 k4 = self.h * self.dfidt(y1i + m3, yi + k3, t + self.h)
-                t = t + self.h
+            self.plot_update.emit(time2, amp, amp[1:], T)
             self.status_update.emit(
                 "Вычисления остановлены"
             ) if self.stop_flag else self.status_update.emit("Вычисления завершены")
