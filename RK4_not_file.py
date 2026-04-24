@@ -5,6 +5,19 @@ import math
 from time import time as current_time
 
 
+def interpolate_maximum(t1, t2, t3, y1, y2, y3):
+    """
+    Параболическая интерполяция максимума.
+    Предполагается, что y2 является максимумом (или минимумом).
+    """
+    dt = t2 - t1  # предполагаем равномерную сетку
+    
+    # Формула для смещения вершины параболы
+    delta = dt * (y1 - y3) / (2 * (y1 - 2*y2 + y3))
+    
+    return t2 + delta
+
+
 class RK4_Thread(QThread):
     error_ocurred = pyqtSignal(Exception)
     status_update = pyqtSignal(str)
@@ -107,7 +120,7 @@ class RK4_Thread(QThread):
                 if i > 2:
                     if (psi[i-3] <= psi[i-2]) and (psi[i-2] >= psi[i-1]):
                         amp = np.append(amp, math.degrees(psi[i-2]))
-                        time2 = np.append(time2, time[i-2])
+                        time2 = np.append(time2, interpolate_maximum(time[i-3], time[i-2], time[i-1], psi[i-3], psi[i-2], psi[i-1]))
                         if len(time2) > 1:
                             T = np.append(T, time2[-1] - time2[-2])
                 if i % (step_count // 100) == 0:
