@@ -15,21 +15,35 @@ class RK4_Thread(QThread):
         all_values = np.fromfile(filename, dtype=np.float32)
 
         if len(all_values) % 11 != 0:
-            print(f"Предупреждение: количество значений ({len(all_values)}) не кратно 11")
+            print(
+                f"Предупреждение: количество значений ({len(all_values)}) не кратно 11"
+            )
 
         for i in range(0, len(all_values), 11):
-            yield all_values[i:i+11]
+            yield all_values[i : i + 11]
 
     def dfi1dt(self, fi1, fi, t):
         w0_2 = self.g / self.d
         beta = self.b / self.I
         return -w0_2 * math.sin(fi) - beta * fi1
         # return -w0_2 * fi - beta * fi1
-    
+
     def dfidt(self, fi1, fi, t):
         return fi1
 
-    def set_params(self, canvas: 'FigureCanvas', stB: QLabel, END_TIME=24*60*60, h=0.002, g=9.81, m=2.4, d=1, R=0.05, PSI0=math.radians(30), PSI10=0):
+    def set_params(
+        self,
+        canvas: "FigureCanvas",
+        stB: QLabel,
+        END_TIME=24 * 60 * 60,
+        h=0.002,
+        g=9.81,
+        m=2.4,
+        d=1,
+        R=0.05,
+        PSI0=math.radians(30),
+        PSI10=0,
+    ):
         self.canvas1 = canvas
         self.stB = stB
 
@@ -38,11 +52,11 @@ class RK4_Thread(QThread):
         self.g = g
         self.m = m
         self.d = d
-        self.I = m * d ** 2
+        self.I = m * d**2
         self.R = R
         self.PSI0 = PSI0
         self.PSI10 = PSI10
-        self.b = 6 * math.pi * (1.81 * 10 ** -5) * R * d ** 2
+        self.b = 6 * math.pi * (1.81 * 10**-5) * R * d**2
 
         self.stop_flag = False
 
@@ -51,8 +65,8 @@ class RK4_Thread(QThread):
 
     def run(self):
         try:
-            self.status_update.emit('Поток вычислений запущен...')
-            
+            self.status_update.emit("Поток вычислений запущен...")
+
             psi = np.array([])
             time = np.array([])
 
@@ -60,15 +74,17 @@ class RK4_Thread(QThread):
             T = np.array([])
             amp = np.array([])
 
-            self.status_update.emit('Начинаем считывать данные...')
+            self.status_update.emit("Начинаем считывать данные...")
             i = 0
-            if os.path.exists('values.bin') and os.path.getsize('values.bin') != 0:
-                for line in list(self.read_floats_numpy('values.bin')):
+            if os.path.exists("values.bin") and os.path.getsize("values.bin") != 0:
+                for line in list(self.read_floats_numpy("values.bin")):
                     i += 1
                     yi, y1i, t, m1, m2, m3, m4, k1, k2, k3, k4 = line
                     psi = np.append(psi, yi)
                     time = np.append(time, t)
-                    self.status_update.emit(f'Актуальное время: {t:.3f} с / {self.END_TIME} с')
+                    self.status_update.emit(
+                        f"Актуальное время: {t:.3f} с / {self.END_TIME} с"
+                    )
                     if len(psi) > 2:
                         if (psi[-3] <= psi[-2]) and (psi[-2] >= psi[-1]):
                             amp = np.append(amp, math.degrees(psi[-2]))
@@ -77,26 +93,28 @@ class RK4_Thread(QThread):
                                 T = np.append(T, time2[-1] - time2[-2])
                     if i % 1000 == 0:
                         self.plot_update.emit(T, amp[1:])
-                        #self.plot_update.emit(time2, amp)
+                        # self.plot_update.emit(time2, amp)
                     if t >= self.END_TIME or self.stop_flag:
                         break
-                data = open('values.bin', 'ab')
-                self.status_update.emit('Данные прочитаны')
+                data = open("values.bin", "ab")
+                self.status_update.emit("Данные прочитаны")
             else:
                 m1, m2, m3, m4, k1, k2, k3, k4 = 0, 0, 0, 0, 0, 0, 0, 0
                 yi = self.PSI0
                 y1i = self.PSI10
                 t = 0
-                data = open('values.bin', 'wb')
-                self.status_update.emit('Данных нет, начинаю расчет')
-            
+                data = open("values.bin", "wb")
+                self.status_update.emit("Данных нет, начинаю расчет")
+
             while t < self.END_TIME and not self.stop_flag:
                 i += 1
-                y1i = y1i + (m1 + 2*m2 + 2*m3 + m4) / 6
-                yi = yi + (k1 + 2*k2 + 2*k3 + k4) / 6
+                y1i = y1i + (m1 + 2 * m2 + 2 * m3 + m4) / 6
+                yi = yi + (k1 + 2 * k2 + 2 * k3 + k4) / 6
                 psi = np.append(psi, yi)
                 time = np.append(time, t)
-                self.status_update.emit(f'Актуальное время: {t:.3f} с / {self.END_TIME} с')
+                self.status_update.emit(
+                    f"Актуальное время: {t:.3f} с / {self.END_TIME} с"
+                )
                 if len(psi) > 2:
                     if (psi[-3] <= psi[-2]) and (psi[-2] >= psi[-1]):
                         amp = np.append(amp, math.degrees(psi[-2]))
@@ -105,18 +123,22 @@ class RK4_Thread(QThread):
                             T = np.append(T, time2[-1] - time2[-2])
                 if i % 1000 == 0:
                     self.plot_update.emit(T, amp[1:])
-                    #self.plot_update.emit(time2, amp)
+                    # self.plot_update.emit(time2, amp)
                 m1 = self.h * self.dfi1dt(y1i, yi, t)
                 k1 = self.h * self.dfidt(y1i, yi, t)
-                m2 = self.h * self.dfi1dt(y1i + m1/2, yi + k1/2, t + self.h/2)
-                k2 = self.h * self.dfidt(y1i + m1/2, yi + k1/2, t + self.h/2)
-                m3 = self.h * self.dfi1dt(y1i + m2/2, yi + k2/2, t + self.h/2)
-                k3 = self.h * self.dfidt(y1i + m2/2, yi + k2/2, t + self.h/2)
+                m2 = self.h * self.dfi1dt(y1i + m1 / 2, yi + k1 / 2, t + self.h / 2)
+                k2 = self.h * self.dfidt(y1i + m1 / 2, yi + k1 / 2, t + self.h / 2)
+                m3 = self.h * self.dfi1dt(y1i + m2 / 2, yi + k2 / 2, t + self.h / 2)
+                k3 = self.h * self.dfidt(y1i + m2 / 2, yi + k2 / 2, t + self.h / 2)
                 m4 = self.h * self.dfi1dt(y1i + m3, yi + k3, t + self.h)
                 k4 = self.h * self.dfidt(y1i + m3, yi + k3, t + self.h)
                 t = t + self.h
-                np.array([yi, y1i, t, m1, m2, m3, m4, k1, k2, k3, k4], dtype=np.float32).tofile(data)
-            self.status_update.emit('Вычисления остановлены') if self.stop_flag else self.status_update.emit('Вычисления завершены')
+                np.array(
+                    [yi, y1i, t, m1, m2, m3, m4, k1, k2, k3, k4], dtype=np.float32
+                ).tofile(data)
+            self.status_update.emit(
+                "Вычисления остановлены"
+            ) if self.stop_flag else self.status_update.emit("Вычисления завершены")
             data.close()
             # self.terminate()
             return super().run()
