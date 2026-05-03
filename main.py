@@ -147,7 +147,7 @@ class Window(QWidget):
         )
         self.canvas.axes.set_ylim(0, float(self.PSI0_edit.text()) + 10)
         self.canvas.axes.set_xlabel("Время, с")
-        self.canvas.axes.set_title("Зависимсть амплитуды от времени")
+        self.canvas.axes.set_title("Зависимость амплитуды от времени")
         self.canvas.axes.set_ylabel("Амплитуда, град")
         self.canvas2.axes.set_xlabel("Амплитуда, град")
         self.canvas2.axes.set_ylabel("Период, с")
