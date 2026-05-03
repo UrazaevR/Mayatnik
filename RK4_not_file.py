@@ -138,7 +138,7 @@ class RK4_Thread(QThread):
             self.plot_update.emit(time2, amp, amp[1:], T)
             self.status_update.emit(
                 "Вычисления остановлены"
-            ) if self.stop_flag else self.status_update.emit("Вычисления завершены")
+            ) if self.stop_flag else self.status_update.emit(f"Вычисления завершены. Max T: {T[1]}, Min T: {T[-1]}, dT = {T[1] - T[-1]}")
             # self.terminate()
             return super().run()
         except Exception as e:
