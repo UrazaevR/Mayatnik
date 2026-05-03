@@ -123,7 +123,7 @@ class RK4_Thread(QThread):
                         time2 = np.append(time2, interpolate_maximum(time[i-3], time[i-2], time[i-1], psi[i-3], psi[i-2], psi[i-1]))
                         if len(time2) > 1:
                             T = np.append(T, time2[-1] - time2[-2])
-                if i % (step_count // 100) == 0:
+                if step_count // 100 != 0 and i % (step_count // 100) == 0:
                     self.plot_update.emit(time2, amp, amp[1:], T)
                     # last_plot_update_time = current_time()
                     # self.plot_update.emit(time2, amp)
@@ -141,5 +141,5 @@ class RK4_Thread(QThread):
             ) if self.stop_flag else self.status_update.emit(f"Вычисления завершены. Max T: {T[1]}, Min T: {T[-1]}, dT = {T[1] - T[-1]}")
             # self.terminate()
             return super().run()
-        except Exception as e:
-            self.error_ocurred.emit(e)
+        except Exception as ex:
+            self.error_ocurred.emit(ex)

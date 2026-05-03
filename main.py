@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QCheckBox,
+    QMessageBox,
 )
 from matplotlib.backends.backend_qtagg import FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
@@ -116,6 +117,7 @@ class Window(QWidget):
         self.calculate_but = QPushButton("Расчитать", self)
         self.calculate_but.setMaximumHeight(50)
         self.stop_but = QPushButton("Стоп", self)
+        self.stop_but.setDisabled(True)
 
         button_layout.addWidget(self.calculate_but)
         button_layout.addWidget(self.stop_but)
@@ -153,32 +155,69 @@ class Window(QWidget):
         self.canvas.draw()
         self.canvas2.draw()
 
+    def check_input(self) -> tuple[bool, str]:
+        values = [self.END_TIME_edit.text().strip(),
+                self.g_edit.text().strip(),
+                self.h_edit.text().strip(), 
+                self.m_edit.text().strip(), 
+                self.d_edit.text().strip(), 
+                self.R_edit.text().strip(), 
+                self.PSI0_edit.text().strip(), 
+                self.PSI10_edit.text().strip()]
+        # проверка на то, что все значения не пустые
+        if not all(values):
+            return False, 'Все значения должны быть заполнены'
+        try:
+            values = list(map(float, values))
+        except ValueError:
+            return False, 'Все значения должны быть числами'
+        if values[1] <= 0:
+            return False, 'Ускорение свободного падения должно быть больше 0'
+        if values[2] <= 0:
+            return False, 'Шаг должен быть больше 0'
+        if values[0] <= values[2]:
+            return False, 'Шаг должен быть меньше конечного времени'
+        if values[3] <= 0:
+            return False, 'Масса должна юыть больше 0'
+        if values[4] <= 0:
+            return False, 'Длина маятника должна быть больше 0'
+        if values[5] <= 0:
+            return False, 'Радиус маятника должен быть больше 0'
+        if not (-180 < values[6] < 180):
+            return False, 'Начальный угол должен лежать в диапазоне от -180 до 180 градусов'
+        return True, 'OK'
+
     def draw_plot(self):
-        self.calculate_but.setDisabled(True)
-        self.stop_but.setEnabled(True)
-        self.calc_thread = RK4_Thread()
-        self.calc_thread.finished.connect(
-            lambda *x: (
-                self.calculate_but.setEnabled(True) == self.stop_but.setDisabled(True)
+        ok, error = self.check_input()
+        if ok:
+            self.calculate_but.setDisabled(True)
+            self.stop_but.setEnabled(True)
+            self.calc_thread = RK4_Thread()
+            self.calc_thread.finished.connect(
+                lambda *x: (
+                    self.calculate_but.setEnabled(True) == self.stop_but.setDisabled(True)
+                )
             )
-        )
-        # self.calc_thread.finished.connect(self.calc_thread.deleteLater)
-        self.calc_thread.error_ocurred.connect(lambda x: print(x))
-        self.calc_thread.status_update.connect(self.statusLab.setText)
-        self.calc_thread.plot_update.connect(self._update_plot)
-        kwargs = {
-            "END_TIME": float(self.END_TIME_edit.text()),
-            "h": float(self.h_edit.text()),
-            "g": float(self.g_edit.text()),
-            "m": float(self.m_edit.text()),
-            "d": float(self.d_edit.text()),
-            "R": float(self.R_edit.text()),
-            "PSI0": math.radians(float(self.PSI0_edit.text())),
-            "PSI10": math.radians(float(self.PSI10_edit.text())),
-            "real_beta": self.real_beta_check.isChecked(),
-        }
-        self.calc_thread.set_params(self.canvas, self.statusLab, **kwargs)
-        self.calc_thread.start()
+            # self.calc_thread.finished.connect(self.calc_thread.deleteLater)
+            self.calc_thread.error_ocurred.connect(lambda x: print(x))
+            self.calc_thread.status_update.connect(self.statusLab.setText)
+            self.calc_thread.plot_update.connect(self._update_plot)
+            kwargs = {
+                "END_TIME": float(self.END_TIME_edit.text()),
+                "h": float(self.h_edit.text()),
+                "g": float(self.g_edit.text()),
+                "m": float(self.m_edit.text()),
+                "d": float(self.d_edit.text()),
+                "R": float(self.R_edit.text()),
+                "PSI0": math.radians(float(self.PSI0_edit.text())),
+                "PSI10": math.radians(float(self.PSI10_edit.text())),
+                "real_beta": self.real_beta_check.isChecked(),
+            }
+            self.calc_thread.set_params(self.canvas, self.statusLab, **kwargs)
+            self.calc_thread.start()
+        else:
+            QMessageBox.warning(self, 'Ошибка ввода', error)
+            
 
 
 if __name__ == "__main__":
