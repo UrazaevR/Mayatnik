@@ -139,6 +139,7 @@ class Window(QWidget):
         self.canvas.axes.cla()
         self.canvas.axes.plot(x1, y1)
         self.canvas2.axes.cla()
+        self.canvas2.axes.plot([-100, 1000], [y2[0], y2[0]], color='red')
         self.canvas2.axes.plot(x2, y2)
         self.canvas2.axes.set_xlim(x2[-1], x2[0])
         self.canvas2.axes.set_ylim(0, round(2 * 3.14 * float(self.d_edit.text()) ** 0.5 / float(self.g_edit.text()) ** 0.5) + 1)

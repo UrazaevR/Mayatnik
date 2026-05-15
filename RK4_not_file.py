@@ -23,18 +23,6 @@ class RK4_Thread(QThread):
     status_update = pyqtSignal(str)
     plot_update = pyqtSignal(np.ndarray, np.ndarray, np.ndarray, np.ndarray)
 
-    def read_floats_numpy(self, filename):
-        """Чтение групп с помощью numpy"""
-        all_values = np.fromfile(filename, dtype=np.float32)
-
-        if len(all_values) % 11 != 0:
-            print(
-                f"Предупреждение: количество значений ({len(all_values)}) не кратно 11"
-            )
-
-        for i in range(0, len(all_values), 11):
-            yield all_values[i : i + 11]
-
     def dfi1dt(self, fi1, fi, t):
         w0_2 = self.g / self.d
         beta = self.b / self.I if self.real_beta else 0.04
