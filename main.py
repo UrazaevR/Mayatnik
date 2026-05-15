@@ -2,7 +2,7 @@ import os
 import sys
 import math
 
-os.environ["QT_API"] = "PyQt6"
+# os.environ["QT_API"] = "PyQt6"
 
 from PyQt6.QtWidgets import (
     QApplication,
@@ -140,8 +140,8 @@ class Window(QWidget):
         self.canvas.axes.plot(x1, y1)
         self.canvas2.axes.cla()
         self.canvas2.axes.plot(x2, y2)
-        self.canvas2.axes.set_xlim(0, float(self.PSI0_edit.text()) + 10)
-        self.canvas2.axes.set_ylim(0, 3)
+        self.canvas2.axes.set_xlim(x2[-1], x2[0])
+        self.canvas2.axes.set_ylim(0, round(2 * 3.14 * float(self.d_edit.text()) ** 0.5 / float(self.g_edit.text()) ** 0.5) + 1)
         self.canvas.axes.set_xlim(
             0, round(float(self.END_TIME_edit.text()) / 100, 1) * 100
         )
@@ -178,11 +178,17 @@ class Window(QWidget):
         if values[0] <= values[2]:
             return False, 'Шаг должен быть меньше конечного времени'
         if values[3] <= 0:
-            return False, 'Масса должна юыть больше 0'
+            return False, 'Масса должна быть больше 0'
+        if values[3] > 300:
+            return False, 'Масса маятника не может превышать 300 кг'
         if values[4] <= 0:
             return False, 'Длина маятника должна быть больше 0'
+        if values[4] > 4:
+            return False, 'Длина маятника не может превышать 4 метра'
         if values[5] <= 0:
             return False, 'Радиус маятника должен быть больше 0'
+        if values[5] > values[4] / 3:
+            return False, 'Радиоус маятника должен быть более чем в 3 раза меньше его длины'
         if not (-180 < values[6] < 180):
             return False, 'Начальный угол должен лежать в диапазоне от -180 до 180 градусов'
         return True, 'OK'

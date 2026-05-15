@@ -10,7 +10,7 @@ def interpolate_maximum(t1, t2, t3, y1, y2, y3):
     Параболическая интерполяция максимума.
     Предполагается, что y2 является максимумом (или минимумом).
     """
-    dt = t2 - t1  # предполагаем равномерную сетку
+    dt = t2 - t1
     
     # Формула для смещения вершины параболы
     delta = dt * (y1 - y3) / (2 * (y1 - 2*y2 + y3))
@@ -137,8 +137,8 @@ class RK4_Thread(QThread):
                 k4 = self.h * self.dfidt(y1i + m3, yi + k3, t + self.h)
             self.plot_update.emit(time2, amp, amp[1:], T)
             self.status_update.emit(
-                "Вычисления остановлены"
-            ) if self.stop_flag else self.status_update.emit(f"Вычисления завершены. Max T: {T[1]}, Min T: {T[-1]}, dT = {T[1] - T[-1]}")
+                f"Вычисления остановлены. Max T: {T[1]}, Min T: {T[-1]}, dT = {T[1] - T[-1]}. За рассчетное время часы будут спешить на {sum([(T[1] - x) * (x / T[1]) for x in T[2:]])} c"
+            ) if self.stop_flag else self.status_update.emit(f"Вычисления завершены. Max T: {T[1]}, Min T: {T[-1]}, dT = {T[1] - T[-1]}. За рассчетное время часы будут спешить на {sum([(T[1] - x) * (x / T[1]) for x in T[2:]])} c")
             # self.terminate()
             return super().run()
         except Exception as ex:
