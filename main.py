@@ -34,7 +34,7 @@ class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(
-            "Зависимость перода колебаний от амплитуды клебаний маятника"
+            "Зависимость периода колебаний от амплитуды колебаний маятника"
         )
         self.resize(1000, 500)
         layout = QVBoxLayout()
@@ -70,43 +70,63 @@ class Window(QWidget):
         toolbar = NavigationToolbar(self.canvas2, self)
         right_plot.addWidget(toolbar)
 
-        # создание панели переменых
+        # создание панели переменных
         value_box = QWidget()
-        value_box.setMaximumWidth(250)
+        value_box.setMaximumWidth(400)
         value_layout = QVBoxLayout(value_box)
+        
         value_layout.addWidget(QLabel("Время окончания эксперимента:"))
         self.END_TIME_edit = QLineEdit()
         self.END_TIME_edit.setText("500")
         value_layout.addWidget(self.END_TIME_edit)
-        value_layout.addWidget(QLabel("Ускорение свободного падения g:"))
+        
+        # Скрываем ускорение свободного падения, но оставляем для проверок
+        self.g_label = QLabel("Ускорение свободного падения g:")
         self.g_edit = QLineEdit()
         self.g_edit.setText("9.81")
+        self.g_label.setVisible(False)
+        self.g_edit.setVisible(False)
+        value_layout.addWidget(self.g_label)
         value_layout.addWidget(self.g_edit)
+        
         value_layout.addWidget(QLabel("Шаг по времени h:"))
         self.h_edit = QLineEdit()
         self.h_edit.setText("0.001")
         value_layout.addWidget(self.h_edit)
+        
         value_layout.addWidget(QLabel("Масса маятника m:"))
         self.m_edit = QLineEdit()
         self.m_edit.setText("2.4")
         value_layout.addWidget(self.m_edit)
-        value_layout.addWidget(QLabel("Длина маяника:"))
+        
+        value_layout.addWidget(QLabel("Длина маятника:"))
         self.d_edit = QLineEdit()
         self.d_edit.setText("0.95")
         value_layout.addWidget(self.d_edit)
+        
         value_layout.addWidget(QLabel("Радиус маятника R:"))
         self.R_edit = QLineEdit()
         self.R_edit.setText("0.05")
         value_layout.addWidget(self.R_edit)
+        
         value_layout.addWidget(QLabel("Начальный угол отклонения PSI0:"))
         self.PSI0_edit = QLineEdit()
         self.PSI0_edit.setText("30")
         value_layout.addWidget(self.PSI0_edit)
-        value_layout.addWidget(QLabel("Начальная скорость PSI10:"))
+        
+        # Скрываем начальную скорость, но оставляем для проверок
+        self.PSI10_label = QLabel("Начальная скорость PSI10:")
         self.PSI10_edit = QLineEdit()
         self.PSI10_edit.setText("0")
+        self.PSI10_label.setVisible(False)
+        self.PSI10_edit.setVisible(False)
+        value_layout.addWidget(self.PSI10_label)
         value_layout.addWidget(self.PSI10_edit)
+        
+        # Чекбокс по умолчанию True
         self.real_beta_check = QCheckBox(text="Использовать реальную beta")
+        self.real_beta_check.setChecked(True)
+        self.real_beta_check.setVisible(False)
         value_layout.addWidget(self.real_beta_check)
 
         plot_layout.addLayout(left_plot)
@@ -114,7 +134,7 @@ class Window(QWidget):
         plot_layout.addWidget(value_box)
         layout.addLayout(plot_layout)
 
-        self.calculate_but = QPushButton("Расчитать", self)
+        self.calculate_but = QPushButton("Рассчитать", self)
         self.calculate_but.setMaximumHeight(50)
         self.stop_but = QPushButton("Стоп", self)
         self.stop_but.setDisabled(True)
@@ -139,10 +159,14 @@ class Window(QWidget):
         self.canvas.axes.cla()
         self.canvas.axes.plot(x1, y1)
         self.canvas2.axes.cla()
-        self.canvas2.axes.plot([-100, 1000], [y2[0], y2[0]], color='red')
+        # Проверка на пустые массивы
+        if len(y2) > 0:
+            self.canvas2.axes.plot([-100, 1000], [y2[0], y2[0]], color='red')
         self.canvas2.axes.plot(x2, y2)
-        self.canvas2.axes.set_xlim(x2[-1], x2[0])
-        self.canvas2.axes.set_ylim(0, round(2 * 3.14 * float(self.d_edit.text()) ** 0.5 / float(self.g_edit.text()) ** 0.5) + 1)
+        if len(x2) > 0:
+            self.canvas2.axes.set_xlim(x2[-1], x2[0])
+        # Используем фиксированное значение g=9.81 для расчета предела
+        self.canvas2.axes.set_ylim(0, round(2 * 3.14 * float(self.d_edit.text()) ** 0.5 / 9.81 ** 0.5) + 1)
         self.canvas.axes.set_xlim(
             0, round(float(self.END_TIME_edit.text()) / 100, 1) * 100
         )
@@ -157,14 +181,16 @@ class Window(QWidget):
         self.canvas2.draw()
 
     def check_input(self) -> tuple[bool, str]:
+        # Сохраняем все значения, включая скрытые поля
         values = [self.END_TIME_edit.text().strip(),
-                self.g_edit.text().strip(),
+                self.g_edit.text().strip(),  # Сохраняем проверку g
                 self.h_edit.text().strip(), 
                 self.m_edit.text().strip(), 
                 self.d_edit.text().strip(), 
                 self.R_edit.text().strip(), 
-                self.PSI0_edit.text().strip(), 
-                self.PSI10_edit.text().strip()]
+                self.PSI0_edit.text().strip(),
+                self.PSI10_edit.text().strip()]  # Сохраняем проверку начальной скорости
+        
         # проверка на то, что все значения не пустые
         if not all(values):
             return False, 'Все значения должны быть заполнены'
@@ -172,12 +198,18 @@ class Window(QWidget):
             values = list(map(float, values))
         except ValueError:
             return False, 'Все значения должны быть числами'
+        
+        # Проверки для всех полей (включая скрытые)
+        if values[0] <= 0:
+            return False, 'Время должно быть больше 0'
         if values[1] <= 0:
             return False, 'Ускорение свободного падения должно быть больше 0'
         if values[2] <= 0:
             return False, 'Шаг должен быть больше 0'
         if values[0] <= values[2]:
             return False, 'Шаг должен быть меньше конечного времени'
+        if 0.1 < values[2]:
+            return False, 'Шаг нельзя задать больше чем 0.1 с'
         if values[3] <= 0:
             return False, 'Масса должна быть больше 0'
         if values[3] > 300:
@@ -189,9 +221,29 @@ class Window(QWidget):
         if values[5] <= 0:
             return False, 'Радиус маятника должен быть больше 0'
         if values[5] > values[4] / 3:
-            return False, 'Радиоус маятника должен быть более чем в 3 раза меньше его длины'
+            return False, 'Радиус маятника должен быть более чем в 3 раза меньше его длины'
         if not (-180 < values[6] < 180):
             return False, 'Начальный угол должен лежать в диапазоне от -180 до 180 градусов'
+        # Проверка для начальной скорости (любое число допустимо, но оставляем на всякий случай)
+        if not (-100 < values[7] < 100):
+            return False, 'Начальная скорость должна быть в разумных пределах'
+        
+        # Проверка плотности маятника
+        # Объем сферического маятника (шар)
+        volume = (4/3) * math.pi * (values[5] ** 3) / 2  # объем шара радиуса R пополам
+        density = values[3] / volume  # плотность = масса / объем
+        
+        # Плотность осмия (самого плотного материала на Земле) - 22600 кг/м³
+        max_density = 22600
+        
+        if density > max_density:
+            return False, f'Слишком большая плотность маятника: {density:.0f} кг/м³ (максимально допустимая {max_density} кг/м³). Уменьшите массу или увеличьте радиус.'
+        
+        # Дополнительная проверка на слишком маленькую плотность (менее плотности пенопласта ~10 кг/м³)
+        min_density = 10
+        if density < min_density:
+            return False, f'Слишком маленькая плотность маятника: {density:.0f} кг/м³ (минимально допустимая {min_density} кг/м³). Увеличьте массу или уменьшите радиус.'
+        
         return True, 'OK'
 
     def draw_plot(self):
@@ -229,6 +281,14 @@ class Window(QWidget):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    
+    # Загрузка QSS стиля
+    try:
+        with open("style.qss", "r", encoding="utf-8") as f:
+            app.setStyleSheet(f.read())
+    except FileNotFoundError:
+        print("Файл style.qss не найден, использую стиль по умолчанию")
+    
     win = Window()
     win.show()
     app.exec()
