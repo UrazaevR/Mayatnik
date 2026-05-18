@@ -77,10 +77,9 @@ class Window(QWidget):
         
         value_layout.addWidget(QLabel("Время окончания эксперимента:"))
         self.END_TIME_edit = QLineEdit()
-        self.END_TIME_edit.setText("500")
+        self.END_TIME_edit.setText("86400")
         value_layout.addWidget(self.END_TIME_edit)
         
-        # Скрываем ускорение свободного падения, но оставляем для проверок
         self.g_label = QLabel("Ускорение свободного падения g:")
         self.g_edit = QLineEdit()
         self.g_edit.setText("9.81")
@@ -200,16 +199,16 @@ class Window(QWidget):
             return False, 'Все значения должны быть числами'
         
         # Проверки для всех полей (включая скрытые)
-        if values[0] <= 0:
-            return False, 'Время должно быть больше 0'
+        if values[0] < 100:
+            return False, 'Время должно быть больше 100'
         if values[1] <= 0:
             return False, 'Ускорение свободного падения должно быть больше 0'
         if values[2] <= 0:
             return False, 'Шаг должен быть больше 0'
         if values[0] <= values[2]:
             return False, 'Шаг должен быть меньше конечного времени'
-        if 0.1 < values[2]:
-            return False, 'Шаг нельзя задать больше чем 0.1 с'
+        if 0.01 < values[2]:
+            return False, 'Шаг нельзя задать больше чем 0.01 с'
         if values[3] <= 0:
             return False, 'Масса должна быть больше 0'
         if values[3] > 300:
@@ -222,8 +221,8 @@ class Window(QWidget):
             return False, 'Радиус маятника должен быть больше 0'
         if values[5] > values[4] / 3:
             return False, 'Радиус маятника должен быть более чем в 3 раза меньше его длины'
-        if not (-180 < values[6] < 180):
-            return False, 'Начальный угол должен лежать в диапазоне от -180 до 180 градусов'
+        if not (-90 <= values[6] <= 90):
+            return False, 'Начальный угол должен лежать в диапазоне от -90 до 90 градусов'
         # Проверка для начальной скорости (любое число допустимо, но оставляем на всякий случай)
         if not (-100 < values[7] < 100):
             return False, 'Начальная скорость должна быть в разумных пределах'
