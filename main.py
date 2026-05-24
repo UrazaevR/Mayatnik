@@ -2,8 +2,7 @@ import os
 import sys
 import math
 
-# os.environ["QT_API"] = "PyQt6"
-
+# os.e
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
