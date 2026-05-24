@@ -45,8 +45,6 @@ class Window(QWidget):
         self.setLayout(layout)
 
         # создание графика 1
-        fig = Figure()
-        self.ax = fig.add_subplot()
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
         self.canvas.axes.set_xlim(0, 500)
         self.canvas.axes.set_ylim(0, 60)
@@ -58,8 +56,6 @@ class Window(QWidget):
         left_plot.addWidget(toolbar)
 
         # создание графика 2
-        fig2 = Figure()
-        self.ax2 = fig2.add_subplot()
         self.canvas2 = MplCanvas(self, width=5, height=4, dpi=100)
         self.canvas2.axes.set_xlim(0, 60)
         self.canvas2.axes.set_ylim(0, 3)
@@ -164,7 +160,6 @@ class Window(QWidget):
         self.canvas2.axes.plot(x2, y2)
         if len(x2) > 0:
             self.canvas2.axes.set_xlim(x2[-1], x2[0])
-        # Используем фиксированное значение g=9.81 для расчета предела
         self.canvas2.axes.set_ylim(0, round(2 * 3.14 * float(self.d_edit.text()) ** 0.5 / 9.81 ** 0.5) + 1)
         self.canvas.axes.set_xlim(
             0, round(float(self.END_TIME_edit.text()) / 100, 1) * 100
@@ -182,13 +177,13 @@ class Window(QWidget):
     def check_input(self) -> tuple[bool, str]:
         # Сохраняем все значения, включая скрытые поля
         values = [self.END_TIME_edit.text().strip(),
-                self.g_edit.text().strip(),  # Сохраняем проверку g
+                self.g_edit.text().strip(),
                 self.h_edit.text().strip(), 
                 self.m_edit.text().strip(), 
                 self.d_edit.text().strip(), 
                 self.R_edit.text().strip(), 
                 self.PSI0_edit.text().strip(),
-                self.PSI10_edit.text().strip()]  # Сохраняем проверку начальной скорости
+                self.PSI10_edit.text().strip()]
         
         # проверка на то, что все значения не пустые
         if not all(values):
@@ -221,16 +216,15 @@ class Window(QWidget):
             return False, 'Радиус маятника должен быть больше 0'
         if values[5] > values[4] / 3:
             return False, 'Радиус маятника должен быть более чем в 3 раза меньше его длины'
-        if not (-90 <= values[6] <= 90):
-            return False, 'Начальный угол должен лежать в диапазоне от -90 до 90 градусов'
+        if not (-60 <= values[6] <= 60):
+            return False, 'Начальный угол должен лежать в диапазоне от -60 до 60 градусов'
         # Проверка для начальной скорости (любое число допустимо, но оставляем на всякий случай)
         if not (-100 < values[7] < 100):
             return False, 'Начальная скорость должна быть в разумных пределах'
         
         # Проверка плотности маятника
-        # Объем сферического маятника (шар)
-        volume = (4/3) * math.pi * (values[5] ** 3) / 2  # объем шара радиуса R пополам
-        density = values[3] / volume  # плотность = масса / объем
+        volume = (4/3) * math.pi * (values[5] ** 3)
+        density = values[3] / volume
         
         # Плотность осмия (самого плотного материала на Земле) - 22600 кг/м³
         max_density = 22600
